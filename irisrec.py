@@ -18,7 +18,22 @@ import string
 ## Feature generation (LBP \& Wavelet)
 ## Evaluation FAR vs FRR
 
-_waitingtime = 2.0 #0.5
+_waitingtime = 0.0 #0.5
+
+def bilinear_interpolation(x, y, points):
+	points = sorted(points)               # order points by x, then by y
+	(x1, y1, q11), (_x1, y2, q12), (x2, _y1, q21), (_x2, _y2, q22) = points
+
+	if x1 != _x1 or x2 != _x2 or y1 != _y1 or y2 != _y2:
+	    raise ValueError('points do not form a rectangle')
+	if not x1 <= x <= x2 or not y1 <= y <= y2:
+	    raise ValueError('(x, y) not within the rectangle')
+
+	return (q11 * (x2 - x) * (y2 - y) +
+            q21 * (x - x1) * (y2 - y) +
+            q12 * (x2 - x) * (y - y1) +
+            q22 * (x - x1) * (y - y1)
+           ) / ((x2 - x1) * (y2 - y1) + 0.0)
 
 class IrisRec:
 
@@ -76,7 +91,6 @@ class IrisRec:
             self.getIrisImages(self.pathNorm)
 
 
-	def bilinear_interpolation():
 
 	   
     def Mask2Norm(self, imgIris, imgMask, wNorm):
@@ -236,30 +250,32 @@ class CASIAIris(IrisRec):
 
 
         #Hough circles transform
-        circles = cv2.HoughCircles(edges, cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
-        tt = 0
+		circles = cv2.HoughCircles(edges, cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
+		tt = 0
 
 
-        while (circles is None and tt < 20):
-            edges = cv2.dilate(edges, se5R, iterations=1)
-            circles = cv2.HoughCircles(edges, cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
-            tt += 1
+		while (circles is None and tt < 20):
+			edges = cv2.dilate(edges, se5R, iterations=1)
+			circles = cv2.HoughCircles(edges, cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
+			tt += 1
 
-        cy = 0
-        if circles is not None:
-            imgMask = np.zeros(imgEye.shape,dtype=np.uint8)
+		cy = 0
+		if circles is not None:
+			imgMask = np.zeros(imgEye.shape,dtype=np.uint8)
 
             # convert the (x, y) coordinates and radius of the circles to integers
-            circles = np.round(circles[0, :]).astype("int")
+			circles = np.round(circles[0, :]).astype("int")
             # choose the one nearest to the center of the image
-            cimg = np.divide(imgEye.shape,2)
-            cx,cy,radPupil = circles[np.argmin(np.sum((circles[:,0:2]-cimg)**2,1)**(0.5)),:]
+			cimg = np.divide(imgEye.shape,2)
+			cx,cy,radPupil = circles[np.argmin(np.sum((circles[:,0:2]-cimg)**2,1)**(0.5)),:]
 
-            cv2.circle(imgMask, (cx, cy), radPupil, 255, 1)
-#           cv2.rectangle(imgMask, (x - 5, y - 5), (x + 5, y + 5), 128, -1)
-        else:
-            print 'Pupil not detected'
-            sys.exit(1)
+			cv2.circle(imgMask, (cx, cy), radPupil, 255, 1)
+			#cv2.rectangle(imgMask, (x - 5, y - 5), (x + 5, y + 5), 128, -1)
+			cv2.imshow('imgMask', imgMask)
+			cv2.waitKey(0)
+		else:
+			print 'Pupil not detected'
+			sys.exit(1)
 
 #       fig, aplt = plt.subplots(1,2)
 #       aplt[0].imshow(imgEye,cmap='Greys_r')
