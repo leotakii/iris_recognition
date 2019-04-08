@@ -3,7 +3,6 @@
 # Import the required modules
 #from utils import flood_fill,bilinear_interpolation
 import cv2, sys, os
-import cv2.cv as cv
 import math as mt
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -242,40 +241,32 @@ class CASIAIris(IrisRec):
 
         # closing
         rec = cv2.morphologyEx(binar, cv2.MORPH_CLOSE, se5R, iterations=3)
-
-
         #Pre processing
-
         edges = cv2.Canny(rec,100,120)
-
-
         #Hough circles transform
-		circles = cv2.HoughCircles(edges, cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
-		tt = 0
-
-
-		while (circles is None and tt < 20):
-			edges = cv2.dilate(edges, se5R, iterations=1)
-			circles = cv2.HoughCircles(edges, cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
-			tt += 1
-
-		cy = 0
-		if circles is not None:
-			imgMask = np.zeros(imgEye.shape,dtype=np.uint8)
-
+        circles = cv2.HoughCircles(edges, cv2.cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
+        tt = 0
+        while (circles is None and tt < 20):
+            edges = cv2.dilate(edges, se5R, iterations=1)
+            circles = cv2.HoughCircles(edges, cv2.cv.CV_HOUGH_GRADIENT, 3.1, 100, minRadius=10, maxRadius=100)
+            tt += 1
+        
+        cy = 0
+        if circles is not None:
+            imgMask = np.zeros(imgEye.shape,dtype=np.uint8)
             # convert the (x, y) coordinates and radius of the circles to integers
-			circles = np.round(circles[0, :]).astype("int")
+            circles = np.round(circles[0, :]).astype("int")
             # choose the one nearest to the center of the image
-			cimg = np.divide(imgEye.shape,2)
-			cx,cy,radPupil = circles[np.argmin(np.sum((circles[:,0:2]-cimg)**2,1)**(0.5)),:]
+            cimg = np.divide(imgEye.shape,2)
+            cx,cy,radPupil = circles[np.argmin(np.sum((circles[:,0:2]-cimg)**2,1)**(0.5)),:]
 
-			cv2.circle(imgMask, (cx, cy), radPupil, 255, 1)
-			#cv2.rectangle(imgMask, (x - 5, y - 5), (x + 5, y + 5), 128, -1)
-			cv2.imshow('imgMask', imgMask)
-			cv2.waitKey(0)
-		else:
-			print 'Pupil not detected'
-			sys.exit(1)
+            cv2.circle(imgMask, (cx, cy), radPupil, 255, 1)
+            #cv2.rectangle(imgMask, (x - 5, y - 5), (x + 5, y + 5), 128, -1)
+            cv2.imshow('imgMask', imgMask)
+            cv2.waitKey(0)
+        else:
+            print 'Pupil not detected'
+            sys.exit(1)
 
 #       fig, aplt = plt.subplots(1,2)
 #       aplt[0].imshow(imgEye,cmap='Greys_r')
